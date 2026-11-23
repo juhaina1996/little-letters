@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Little Letters 🦉
 
-## Getting Started
+A playful Next.js app for a Grade 1 learner to practise **Hindi**, **Arabic** and **Malayalam** letters and simple words.
 
-First, run the development server:
+## Activities (per language)
+- **Letters** – tap a letter to see it big, hear it, and see a picture word.
+- **Words** – picture cards with easy words; tap to hear.
+- **Play** – "Which letter does this start with?" (picture mode) or "Listen and find" (sound mode). Stars are saved on the device.
+- **Write** – trace the letter with a finger or mouse.
 
+## Run
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+Open http://localhost:3000.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Sound
+Uses the browser's built-in text-to-speech (no audio files). If a device has no voice for a language the app shows a
+small note; add the voice in the device's text-to-speech settings (Android Chrome usually has Hindi, Arabic and Malayalam).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Editing letters / words
+All content lives in `src/data/languages.ts`.
