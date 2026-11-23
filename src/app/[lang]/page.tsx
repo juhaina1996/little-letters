@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import TopBar from "@/components/TopBar";
 import Script from "@/components/Script";
-import { getLanguage } from "@/data/languages";
+import { MARKS, getLanguage } from "@/data/languages";
 
 const ACTIVITIES = [
   { slug: "letters", emoji: "🔤", title: "Letters", hint: "Tap a letter and listen" },
@@ -16,6 +16,14 @@ const ACTIVITIES = [
 export default async function LanguageHome({ params }: { params: Promise<{ lang: string }> }) {
   const lang = getLanguage((await params).lang);
   if (!lang) notFound();
+  const marks = MARKS[lang.id];
+  const activities = marks
+    ? [
+        ...ACTIVITIES,
+        { slug: "signs", emoji: marks.carrier + marks.marks[0].sign + marks.marks[1].sign, title: marks.title.split(" · ")[0], hint: "Learn the vowel signs", script: true },
+        { slug: "signs-game", emoji: "🎯", title: "Signs game", hint: "Hear it, find it" },
+      ]
+    : ACTIVITIES;
   const sample = lang.letters.slice(0, 3).map((l) => l.char).join(" ");
 
   return (
@@ -28,13 +36,19 @@ export default async function LanguageHome({ params }: { params: Promise<{ lang:
         <p className="mt-2 text-lg text-slate-600">What do you want to do?</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
-        {ACTIVITIES.map((a) => (
+        {activities.map((a) => (
           <Link
             key={a.slug}
             href={`/${lang.id}/${a.slug}`}
             className="chunky flex flex-col items-center rounded-[2rem] bg-white px-3 py-6 text-center"
           >
-            <span className="text-5xl">{a.emoji}</span>
+            {"script" in a ? (
+              <Script lang={lang} className="h-12 text-5xl font-bold leading-none">
+                <span style={{ color: lang.color }}>{a.emoji}</span>
+              </Script>
+            ) : (
+              <span className="text-5xl">{a.emoji}</span>
+            )}
             <span className="mt-2 text-2xl font-extrabold" style={{ color: lang.color }}>
               {a.title}
             </span>

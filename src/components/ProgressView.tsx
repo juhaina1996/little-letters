@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import Script from "@/components/Script";
-import { getLanguage, type LanguageId } from "@/data/languages";
-import { LEVELS, levelOf, resetProgress, rightCount, statOf, useProgress, wrongCount, type LetterStat } from "@/lib/progress";
+import { MARKS, getLanguage, type LanguageId } from "@/data/languages";
+import { LEVELS, levelOf, markKey, resetProgress, rightCount, statOf, useProgress, wrongCount, type LetterStat } from "@/lib/progress";
 
 function streak(days: string[]): number {
   const set = new Set(days);
@@ -36,7 +36,9 @@ export default function ProgressView({ langId }: { langId: LanguageId }) {
   const stats = lang.letters.map((l) => ({ l, s: statOf(progress, l.char) }));
   const levels = stats.map(({ s }) => levelOf(s));
   const count = (lvl: number) => levels.filter((x) => x === lvl).length;
-  const stars = stats.reduce((n, { s }) => n + rightCount(s), 0);
+  const markSet = MARKS[lang.id];
+  const markStats = (markSet?.marks ?? []).map((m) => ({ m, s: statOf(progress, markKey(m.id)) }));
+  const stars = stats.reduce((n, { s }) => n + rightCount(s), 0) + markStats.reduce((n, { s }) => n + rightCount(s), 0);
   const tricky = stats
     .filter(({ s }) => wrongCount(s) > 0 && levelOf(s) < 3)
     .sort((a, b) => wrongCount(b.s) - rightCount(b.s) - (wrongCount(a.s) - rightCount(a.s)))
@@ -110,6 +112,34 @@ export default function ProgressView({ langId }: { langId: LanguageId }) {
           })}
         </div>
       </section>
+
+      {markSet && (
+        <section className="mt-6">
+          <h2 className="mb-2 text-xl font-bold text-slate-600">{markSet.title}</h2>
+          <div dir={lang.dir} className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+            {markStats.map(({ m, s }) => {
+              const lvl = levelOf(s, 1);
+              const lv = LEVELS[lvl];
+              return (
+                <div
+                  key={m.id}
+                  title={`${m.name}: ${s.quizRight} right, ${s.quizWrong} missed`}
+                  className="relative flex aspect-square flex-col items-center justify-center rounded-2xl"
+                  style={{ background: lv.bg, color: lv.fg }}
+                >
+                  <Script lang={lang} className="text-5xl font-bold leading-none">
+                    {markSet.carrier + m.sign}
+                  </Script>
+                  <span className="text-[10px] font-bold" dir="ltr">
+                    ✓{s.quizRight} ✗{s.quizWrong}
+                  </span>
+                  <span className="absolute -right-1 -top-2 text-base">{lvl > 0 ? lv.emoji : ""}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {pickedStat && (
         <div className="pop mt-4 rounded-3xl bg-white p-4">

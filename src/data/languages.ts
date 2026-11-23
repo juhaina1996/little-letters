@@ -224,3 +224,99 @@ export const LANGUAGE_LIST = Object.values(LANGUAGES);
 export function getLanguage(id: string): Language | undefined {
   return LANGUAGES[id as LanguageId];
 }
+
+/* ------------------------------------------------------------------ */
+/* Vowel signs — Arabic harakat, Malayalam chihnangal                  */
+/* ------------------------------------------------------------------ */
+
+export type Mark = {
+  id: string;
+  /** The combining sign(s) added after a consonant */
+  sign: string;
+  name: string;
+  nativeName?: string;
+  /** Vowel sound added to the consonant, in English letters */
+  sound: string;
+  /** Not used with alif (Arabic) */
+  noAlif?: boolean;
+};
+
+export type MarkSet = {
+  title: string;
+  /** Base shown under a sign on its own: tatweel for Arabic, dotted circle otherwise */
+  carrier: string;
+  marks: Mark[];
+  /** Consonants that are not practised with signs */
+  skipLetters: string[];
+};
+
+export const MARKS: Partial<Record<LanguageId, MarkSet>> = {
+  arabic: {
+    title: "Harakat · الحركات",
+    carrier: "ـــ",
+    skipLetters: [],
+    marks: [
+      { id: "fatha", sign: "َ", name: "Fatha", nativeName: "فَتْحَة", sound: "a" },
+      { id: "kasra", sign: "ِ", name: "Kasra", nativeName: "كَسْرَة", sound: "i" },
+      { id: "damma", sign: "ُ", name: "Damma", nativeName: "ضَمَّة", sound: "u" },
+      { id: "sukun", sign: "ْ", name: "Sukun", nativeName: "سُكُون", sound: "", noAlif: true },
+      { id: "shadda", sign: "َّ", name: "Shadda", nativeName: "شَدَّة", sound: "a", noAlif: true },
+      { id: "fathatan", sign: "ً", name: "Tanween Fath", nativeName: "تَنْوِين الفَتْح", sound: "an" },
+      { id: "kasratan", sign: "ٍ", name: "Tanween Kasr", nativeName: "تَنْوِين الكَسْر", sound: "in" },
+      { id: "dammatan", sign: "ٌ", name: "Tanween Damm", nativeName: "تَنْوِين الضَّمّ", sound: "un" },
+    ],
+  },
+  malayalam: {
+    title: "Signs · ചിഹ്നങ്ങൾ",
+    carrier: "◌",
+    skipLetters: ["ങ", "ഝ", "ഢ"],
+    marks: [
+      { id: "aa", sign: "ാ", name: "aa sign", sound: "aa" },
+      { id: "i", sign: "ി", name: "i sign", sound: "i" },
+      { id: "ee", sign: "ീ", name: "ee sign", sound: "ee" },
+      { id: "u", sign: "ു", name: "u sign", sound: "u" },
+      { id: "oo", sign: "ൂ", name: "oo sign", sound: "oo" },
+      { id: "ru", sign: "ൃ", name: "ru sign", sound: "ru" },
+      { id: "e", sign: "െ", name: "e sign", sound: "e" },
+      { id: "ae", sign: "േ", name: "ae sign", sound: "ae" },
+      { id: "ai", sign: "ൈ", name: "ai sign", sound: "ai" },
+      { id: "o", sign: "ൊ", name: "o sign", sound: "o" },
+      { id: "oa", sign: "ോ", name: "oa sign", sound: "oa" },
+      { id: "au", sign: "ൗ", name: "au sign", sound: "au" },
+      { id: "am", sign: "ം", name: "Anusvaram", nativeName: "അനുസ്വാരം", sound: "am" },
+      { id: "chandrakkala", sign: "്", name: "Chandrakkala", nativeName: "ചന്ദ്രക്കല", sound: "ŭ" },
+    ],
+  },
+};
+
+const ARABIC_BASE: Record<string, string> = {
+  ا: "", ب: "b", ت: "t", ث: "th", ج: "j", ح: "h", خ: "kh", د: "d", ذ: "dh", ر: "r", ز: "z", س: "s", ش: "sh",
+  ص: "s", ض: "d", ط: "t", ظ: "dh", ع: "'", غ: "gh", ف: "f", ق: "q", ك: "k", ل: "l", م: "m", ن: "n", ه: "h", و: "w", ي: "y",
+};
+
+/** The consonant's sound without its built-in "a" (ka → k). */
+function baseSound(langId: LanguageId, letter: Letter): string {
+  if (langId === "arabic") return ARABIC_BASE[letter.char] ?? letter.roman;
+  return letter.roman.replace(/a$/, "");
+}
+
+export type Syllable = { text: string; roman: string; letter: Letter; mark: Mark };
+
+/** Letter + sign, e.g. ب + kasra → بِ "bi". Returns null for combinations that aren't taught. */
+export function makeSyllable(langId: LanguageId, letter: Letter, mark: Mark): Syllable | null {
+  let char = letter.char;
+  if (langId === "arabic" && char === "ا") {
+    if (mark.noAlif) return null;
+    char = mark.id === "kasra" || mark.id === "kasratan" ? "إ" : "أ";
+  }
+  const b = baseSound(langId, letter);
+  const roman = mark.id === "shadda" ? `${b}${b}${mark.sound}` : `${b}${mark.sound}` || "'";
+  return { text: char + mark.sign, roman, letter, mark };
+}
+
+/** Consonants that are practised with signs. */
+export function markLetters(langId: LanguageId): Letter[] {
+  const set = MARKS[langId];
+  if (!set) return [];
+  return LANGUAGES[langId].letters.filter((l) => l.group === "consonant" && !set.skipLetters.includes(l.char));
+}

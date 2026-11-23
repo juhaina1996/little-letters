@@ -114,10 +114,10 @@ export const rightCount = (s: LetterStat) => s.quizRight + s.wroteRight + s.said
 export const wrongCount = (s: LetterStat) => s.quizWrong + s.wroteWrong + s.saidWrong;
 
 /** 0 = new, 1 = started, 2 = learning, 3 = mastered */
-export function levelOf(s: LetterStat): 0 | 1 | 2 | 3 {
+export function levelOf(s: LetterStat, minActivities = 2): 0 | 1 | 2 | 3 {
   const right = rightCount(s);
   const activities = [s.quizRight, s.wroteRight, s.saidRight].filter((n) => n > 0).length;
-  if (right >= 4 && activities >= 2 && right >= wrongCount(s) * 2) return 3;
+  if (right >= 4 && activities >= minActivities && right >= wrongCount(s) * 2) return 3;
   if (right >= 1) return 2;
   if (s.seen + s.traced + wrongCount(s) > 0) return 1;
   return 0;
@@ -130,13 +130,15 @@ export const LEVELS = [
   { label: "Mastered", emoji: "🏆", bg: "#bbf7d0", fg: "#15803d" },
 ] as const;
 
-/** Pick a letter, favouring ones she finds hard or hasn't practised. */
-export function pickLetter(letters: Letter[], p: LangProgress, avoid?: string): Letter {
-  const pool = letters.length > 1 && avoid ? letters.filter((l) => l.char !== avoid) : letters;
-  const weights = pool.map((l) => {
-    const s = statOf(p, l.char);
-    const lvl = levelOf(s);
-    return [4, 3, 2, 0.6][lvl] + Math.min(wrongCount(s), 5) * 0.5;
+/** Progress key for a vowel sign, stored next to the letters. */
+export const markKey = (markId: string) => `mark:${markId}`;
+
+/** Pick an item, favouring ones she finds hard or hasn't practised. */
+export function pickWeighted<T>(items: T[], keyOf: (t: T) => string, p: LangProgress, avoid?: string, minActivities = 2): T {
+  const pool = items.length > 1 && avoid ? items.filter((t) => keyOf(t) !== avoid) : items;
+  const weights = pool.map((t) => {
+    const s = statOf(p, keyOf(t));
+    return [4, 3, 2, 0.6][levelOf(s, minActivities)] + Math.min(wrongCount(s), 5) * 0.5;
   });
   let r = Math.random() * weights.reduce((a, b) => a + b, 0);
   for (let i = 0; i < pool.length; i++) {
@@ -144,6 +146,10 @@ export function pickLetter(letters: Letter[], p: LangProgress, avoid?: string): 
     if (r <= 0) return pool[i];
   }
   return pool[pool.length - 1];
+}
+
+export function pickLetter(letters: Letter[], p: LangProgress, avoid?: string): Letter {
+  return pickWeighted(letters, (l) => l.char, p, avoid);
 }
 
 export function shuffle<T>(arr: T[]): T[] {
